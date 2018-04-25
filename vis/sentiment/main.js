@@ -127,7 +127,7 @@ function render_chart (data) {
     .append('line')
     .attr('x1', (d, i, j) => {
       // console.log(d, i, j, n, x);
-      const val = x(d.season) + 0 * x.rangeBand() / n;
+      const val = x(d.season);
       if (isNaN(val)) {
         console.log(d, i, j, n, x);
         console.log(val);
@@ -139,8 +139,7 @@ function render_chart (data) {
       return val;
     })
     .attr('x2', (d, i, j) => {
-      // const val = x(d.season) + x.rangeBand() / n * j;
-      const val = x(d.season) + 0 * x.rangeBand() / n + 75;
+      const val = x(d.season) + x.rangeBand() / n;
       if (isNaN(val)) {
         console.log('x2', d, i, j, n);
       }
@@ -169,30 +168,6 @@ function render_chart (data) {
     .attr("dx", ".71em")
     .attr("dy", "-.71em")
     .text("Min - Max Temperature (Month wise)");
-
-  // add legend
-  // var legend = svg.append("g")
-    // .attr("class", "legend")
-
-  // legend.selectAll('text')
-    // .data(dataset["colors"])
-    // .enter()
-    // .append("rect")
-    // .attr("x", width-margin.right)
-    // .attr("y", function(d, i){ return i *  20;})
-    // .attr("width", 10)
-    // .attr("height", 10)
-    // .style("fill", function(d) {
-      // return d;
-    // })
-
-  // legend.selectAll('text')
-    // .data(dataset["series"])
-    // .enter()
-    // .append("text")
-    // .attr("x", width-margin.right + 25)
-    // .attr("y", function(d, i){ return i *  20 + 9;})
-    // .text(function(d){return d});
 
   var tooltip = d3.select("body")
     .append('div')
