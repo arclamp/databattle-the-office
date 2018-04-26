@@ -32,7 +32,6 @@ function render_chart (data) {
   console.log(dataset);
 
   const n = dataset["series"].length; // Number of Layers
-  // const n = dataset["categories"].length; // Number of Layers
   const m = dataset["layers"].length; // Number of Samples in 1 layer
 
   const yGroupMax = d3.max(dataset["layers"], function(layer) { return d3.max(layer, function(d) { return d.y0; }); });
@@ -79,16 +78,15 @@ function render_chart (data) {
     .data(function(d,i){d.map(function(b){b.colorIndex=i;return b;});return d;})
     .enter().append("rect");
 
-    // rect.transition()
-    // .duration(500)
-    // .delay(function(d, i) { return i * 10; })
-    // .attr("x", function(d, i, j) { return x(d.season) + x.rangeBand() / n * j; })
+  rect.attr("x", function(d, i, j) { return x(d.season) + x.rangeBand() / n * j; })
+    .style('opacity', 0);
     // .attr("width", x.rangeBand() / n)
     // .transition()
     // .attr("y", function(d) { return y(d.y0); })
     // .attr("height", function(d) { return height - y(d.y0-d.y)})
     // .attr("class","bar")
-    // .style("fill",function(d){return dataset["colors"][d.colorIndex];})
+    // .style("fill",function(d){return 'black';})
+    // .style('opacity', 0.1);
 
   let barData = [];
   rect.selectAll('line')
@@ -107,51 +105,83 @@ function render_chart (data) {
       // console.log('data', data);
       // return data;
 
-      const data = d.data.map(x => (x.season = d.season, x));
+      let data = d.data.filter(d => d.pos > 0.0 && d.pos < 1.0);
+      data = data.map(x => {
+        x.season = d.season;
+        x.total = data.length;
+        return x;
+      }).sort((x, y) => x.pos - y.pos);
 
       barData.push(data);
 
       return data;
     });
 
-  console.log('barData', barData);
-
   var bargroups = layer.selectAll('g')
     .data(barData)
     .enter()
     .append('g');
 
-  bargroups.selectAll('line')
+  const strokes = false;
+  const duration = 1000;
+
+  let lines = bargroups.selectAll('line')
     .data((d, i) => d)
     .enter()
     .append('line')
     .attr('x1', (d, i, j) => {
-      // console.log(d, i, j, n, x);
-      const val = x(d.season);
-      if (isNaN(val)) {
-        console.log(d, i, j, n, x);
-        console.log(val);
+      let val;
+      if (strokes) {
+        val = x(d.season);
+      } else {
+        val = x(d.season) + 0.5 * x.rangeBand() / n;
       }
       return val;
     })
     .attr('y1', (d, i) => {
-      const val = y(d.pos);
+      let val;
+      if (strokes) {
+        val = y(d.pos);
+      } else {
+        val = y(i / d.total);
+      }
       return val;
     })
+    .attr('x2', function () {
+      return d3.select(this)
+        .attr('x1');
+    })
+    .attr('y2', function () {
+      return d3.select(this)
+        .attr('y1');
+    })
+    .classed('bar', true)
+    .transition()
+    .delay((d, i, j) => j * 250 + i / d.total * duration)
+    .duration(duration)
     .attr('x2', (d, i, j) => {
-      const val = x(d.season) + x.rangeBand() / n;
-      if (isNaN(val)) {
-        console.log('x2', d, i, j, n);
+      let val;
+      if (strokes) {
+        val = x(d.season) + x.rangeBand() / n;
+      } else {
+        val = x(d.season) + (2 * (d.pos - 0.5) + 1) * 0.5 * x.rangeBand() / n
       }
       return val;
     })
     .attr('y2', (d, i) => {
-      const val = y(d.pos);
+      let val;
+      if (strokes) {
+        val = y(d.pos);
+      } else {
+        val = y(i / d.total);
+      }
       return val;
     })
-    .classed('bar', true)
-    .style('stroke', d => yColor(d.pos))
-    .style('opacity', 0.05);
+    .style('stroke', d => yColor(d.pos));
+
+  if (strokes) {
+    lines.style('opacity', 0.05);
+  }
 
   svg.append("g")
     .attr("class", "x axis")

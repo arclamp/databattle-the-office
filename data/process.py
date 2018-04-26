@@ -1,5 +1,4 @@
-import codecs
-import io
+import json
 import pprint
 import sys
 import unicodecsv as csv
@@ -72,25 +71,44 @@ def main():
         reader = csv.DictReader(datafile)
         data = list(reader)
 
-    # Count up some phrases.
-    phrases = {
-        'twss': count_phrase("that's what she said", data),
-        'schrute_farms': count_phrase('schrute farms', data),
-        'scranton_strangler': count_phrase('scranton strangler', data),
-        'here_comes_treble': count_phrase('here comes treble', data),
-        'broccoli_rob': count_phrase('broccoli rob', data),
-        'bsg': count_phrase('battlestar galactica', data),
-        'vance_refrigeration': count_phrase('vance refrigeration', data)
-    }
+    if False:
+        # Count up some phrases.
+        phrases = {
+            'twss': count_phrase("that's what she said", data),
+            'schrute_farms': count_phrase('schrute farms', data),
+            'scranton_strangler': count_phrase('scranton strangler', data),
+            'here_comes_treble': count_phrase('here comes treble', data),
+            'broccoli_rob': count_phrase('broccoli rob', data),
+            'bsg': count_phrase('battlestar galactica', data),
+            'vance_refrigeration': count_phrase('vance refrigeration', data)
+        }
 
-    for phrase in phrases:
-        print '%s:' % (phrase)
-        pprint.pprint(phrases[phrase])
-        print
+        for phrase in phrases:
+            print '%s:' % (phrase)
+            pprint.pprint(phrases[phrase])
+            print
 
     sentiment_analysis(data)
+    # data = sorted(data, key=lambda x: x['pos'], reverse=True)
 
-    pprint.pprint(sorted(data, key=lambda x: x['pos'], reverse=True))
+    sentiment = {}
+    for d in filter(lambda x: x['speaker'] in ['Michael'], data):
+        speaker = d['speaker']
+        season = d['season']
+
+        if speaker not in sentiment:
+            sentiment[speaker] = {}
+        if season not in sentiment[speaker]:
+            sentiment[speaker][season] = []
+
+        sentiment[speaker][season].append({
+            'pos': d['pos']#,
+            # 'line_text': d['line_text']
+        })
+
+    with open('sentiment.json', 'w') as out:
+        out.write(json.dumps(sentiment, indent=2))
+
 
 if __name__ == '__main__':
     sys.exit(main())
