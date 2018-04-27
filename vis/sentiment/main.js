@@ -10,6 +10,19 @@
   });
 })();
 
+function smooth (data) {
+  const win = 5;
+
+  return data.map((d, i, all) => {
+    const sample = all.slice(Math.max(0, i - win / 2 - 1), i + win / 2);
+    const val = sample.reduce((a, cur) => a + cur.positivity, 0) / sample.length;
+
+    return Object.assign(d, {
+      positivity: val
+    });
+  });
+}
+
 function render_chart (sel, title, data, field, strokes, sorted) {
   const stack = d3.layout.stack();
   let dataset = {
@@ -32,6 +45,9 @@ function render_chart (sel, title, data, field, strokes, sorted) {
     dataset.layers[0].push(d);
   }
 
+  dataset.layers[0].forEach(season => {
+    season.data = smooth(season.data);
+  });
   console.log(dataset);
 
   const n = dataset["series"].length; // Number of Layers
@@ -85,32 +101,10 @@ function render_chart (sel, title, data, field, strokes, sorted) {
 
   rect.attr("x", function(d, i, j) { return x(d.season) + x.rangeBand() / n * j; })
     .style('opacity', 0);
-    // .attr("width", x.rangeBand() / n)
-    // .transition()
-    // .attr("y", function(d) { return y(d.y0); })
-    // .attr("height", function(d) { return height - y(d.y0-d.y)})
-    // .attr("class","bar")
-    // .style("fill",function(d){return 'black';})
-    // .style('opacity', 0.1);
 
   let barData = [];
   rect.selectAll('line')
     .data((d, i) => {
-      // console.log(d);
-
-      // d.map(b => {
-        // b.colorIndex = i;
-        // return b;
-      // });
-
-      // let data = [];
-      // for (let k in d) {
-        // data.push(d[k].data.map(x => (x.season = d[k].season, x)));
-      // }
-      // console.log('data', data);
-      // return data;
-
-      // let data = d.data.filter(d => d.pos > 0.0 && d.pos < 1.0);
       let data = d.data.filter(d => true);
       data = data.map(x => {
         x.season = d.season;
@@ -241,5 +235,4 @@ function render_chart (sel, title, data, field, strokes, sorted) {
       tooltip.style('display', 'none');
       tooltip.style('opacity',0);
     });
-
 }
