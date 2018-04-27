@@ -56,8 +56,8 @@ function render_chart (sel, title, data, field, strokes, sorted) {
   const yGroupMax = d3.max(dataset["layers"], function(layer) { return d3.max(layer, function(d) { return d.y0; }); });
   const yGroupMin = d3.min(dataset["layers"], function(layer) { return d3.min(layer, function(d) { return d.y; }); });
 
-  var margin = {top: 50, right: 50, bottom: 50, left: 100},
-    width = 900 - margin.left - margin.right,
+  var margin = {top: 25, right: 25, bottom: 25, left: 25},
+    width = 700 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
   var x = d3.scale.ordinal()
