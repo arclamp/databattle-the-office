@@ -146,7 +146,7 @@ function render_chart (sel, title, data, field, strokes, sorted) {
       if (strokes) {
         val = y(d.positivity);
       } else {
-        val = y(i / d.total);
+        val = y(i / d.total) - 0.5 * height / d.total;
       }
       return val;
     })
@@ -158,6 +158,7 @@ function render_chart (sel, title, data, field, strokes, sorted) {
       return d3.select(this)
         .attr('y1');
     })
+    .style('stroke-width', d => height / d.total)
     .classed('bar', true)
     .transition()
     .delay((d, i, j) => j * 250 + i / d.total * duration)
@@ -167,17 +168,7 @@ function render_chart (sel, title, data, field, strokes, sorted) {
       if (strokes) {
         val = x(d.season) + x.rangeBand() / n;
       } else {
-        // val = x(d.season) + (2 * (d.positivity - 0.5) + 1) * 0.5 * x.rangeBand() / n
         val = +d3.select(this).attr('x1') + d.positivity * 0.5 * x.rangeBand() / n;
-      }
-      return val;
-    })
-    .attr('y2', (d, i) => {
-      let val;
-      if (strokes) {
-        val = y(d.positivity);
-      } else {
-        val = y(i / d.total);
       }
       return val;
     })
