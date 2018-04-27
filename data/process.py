@@ -92,7 +92,7 @@ def main():
     # data = sorted(data, key=lambda x: x['pos'], reverse=True)
 
     sentiment = {}
-    for d in filter(lambda x: x['speaker'] in ['Michael'], data):
+    for d in filter(lambda x: x['speaker'] in ['Michael', 'Stanley', 'Dwight', 'Jim'], data):
         speaker = d['speaker']
         season = d['season']
 
@@ -102,8 +102,10 @@ def main():
             sentiment[speaker][season] = []
 
         sentiment[speaker][season].append({
-            'pos': d['pos']#,
-            # 'line_text': d['line_text']
+            'pos': d['pos'],
+            'neg': d['neg'],
+            'positivity': d['pos'] - d['neg'],
+            'line_text': d['line_text']
         })
 
     with open('sentiment.json', 'w') as out:

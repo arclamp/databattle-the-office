@@ -2,16 +2,19 @@
   fetch('sentiment.json').then(req => {
     req.json().then(data => {
       console.log(data);
-      render_chart(data);
+      render_chart("#chart1", "Michael Scott", data, "Michael", false, false);
+      render_chart("#chart2", "Stanley Hudson", data, "Stanley", false, false);
+      render_chart("#chart3", "Dwight Schrute", data, "Dwight", false, false);
+      render_chart("#chart4", "Jim Halpert", data, "Jim", false, false);
     })
   });
 })();
 
-function render_chart (data) {
+function render_chart (sel, title, data, field, strokes, sorted) {
   const stack = d3.layout.stack();
   let dataset = {
     categories: [...Array(9).keys()].map(x => `S${x + 1}`),
-    "series": ["Michael"],
+    "series": [field],
     "colors": ["#3498db"],
     "layers": [
       [
@@ -22,7 +25,7 @@ function render_chart (data) {
   for (let i = 1; i <= 9; i++) {
     let d = {};
     d.season = `S${i}`;
-    d.data = data['Michael'][i] || [];
+    d.data = data[field][i] || [];
     d.y = d3.min(d.data, val => val.pos) || 0;
     d.y0 = d3.max(d.data, val => val.pos) || 0;
 
@@ -50,7 +53,7 @@ function render_chart (data) {
     .range([height, 0]);
 
   var yColor = d3.scale.linear()
-    .domain([yGroupMin, yGroupMax])
+    .domain([-1, 1])
     .range(['red', 'blue']);
 
   var xAxis = d3.svg.axis()
@@ -61,9 +64,10 @@ function render_chart (data) {
 
   var yAxis = d3.svg.axis()
     .scale(y)
+    .tickValues([])
     .orient("left");
 
-  var svg = d3.select("#chart1").append("svg")
+  var svg = d3.select(sel).append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
@@ -76,7 +80,8 @@ function render_chart (data) {
 
   var rect = layer.selectAll("rect")
     .data(function(d,i){d.map(function(b){b.colorIndex=i;return b;});return d;})
-    .enter().append("rect");
+    .enter().append("rect")
+    .style('pointer-events', 'none');
 
   rect.attr("x", function(d, i, j) { return x(d.season) + x.rangeBand() / n * j; })
     .style('opacity', 0);
@@ -105,12 +110,17 @@ function render_chart (data) {
       // console.log('data', data);
       // return data;
 
-      let data = d.data.filter(d => d.pos > 0.0 && d.pos < 1.0);
+      // let data = d.data.filter(d => d.pos > 0.0 && d.pos < 1.0);
+      let data = d.data.filter(d => true);
       data = data.map(x => {
         x.season = d.season;
         x.total = data.length;
         return x;
-      }).sort((x, y) => x.pos - y.pos);
+      })
+
+      if (sorted) {
+        data.sort((x, y) => x.positivity - y.positivity);
+      }
 
       barData.push(data);
 
@@ -122,7 +132,6 @@ function render_chart (data) {
     .enter()
     .append('g');
 
-  const strokes = false;
   const duration = 1000;
 
   let lines = bargroups.selectAll('line')
@@ -141,7 +150,7 @@ function render_chart (data) {
     .attr('y1', (d, i) => {
       let val;
       if (strokes) {
-        val = y(d.pos);
+        val = y(d.positivity);
       } else {
         val = y(i / d.total);
       }
@@ -159,25 +168,26 @@ function render_chart (data) {
     .transition()
     .delay((d, i, j) => j * 250 + i / d.total * duration)
     .duration(duration)
-    .attr('x2', (d, i, j) => {
+    .attr('x2', function (d, i, j) {
       let val;
       if (strokes) {
         val = x(d.season) + x.rangeBand() / n;
       } else {
-        val = x(d.season) + (2 * (d.pos - 0.5) + 1) * 0.5 * x.rangeBand() / n
+        // val = x(d.season) + (2 * (d.positivity - 0.5) + 1) * 0.5 * x.rangeBand() / n
+        val = +d3.select(this).attr('x1') + d.positivity * 0.5 * x.rangeBand() / n;
       }
       return val;
     })
     .attr('y2', (d, i) => {
       let val;
       if (strokes) {
-        val = y(d.pos);
+        val = y(d.positivity);
       } else {
         val = y(i / d.total);
       }
       return val;
     })
-    .style('stroke', d => yColor(d.pos));
+    .style('stroke', d => yColor(d.positivity));
 
   if (strokes) {
     lines.style('opacity', 0.05);
@@ -197,7 +207,7 @@ function render_chart (data) {
     .attr("y", 0)
     .attr("dx", ".71em")
     .attr("dy", "-.71em")
-    .text("Min - Max Temperature (Month wise)");
+    .text(title);
 
   var tooltip = d3.select("body")
     .append('div')
@@ -208,12 +218,13 @@ function render_chart (data) {
   tooltip.append('div')
     .attr('class', 'tempRange');
 
-  svg.selectAll("rect")
+  svg.selectAll("line")
     .on('mouseover', function(d) {
       if(!d.season)return null;
 
-      tooltip.select('.month').html("<b>" + d.season + "</b>");
-      tooltip.select('.tempRange').html(d.y + "&#8451; to " + d.y0 + "&#8451;");
+      // tooltip.select('.month').html("<b>" + d.season + "</b>");
+      tooltip.select('.month').html(`<b>${d.season} ${d.pos} ${d.neg}</b>`);
+      tooltip.select('.tempRange').text(d.line_text);
 
       tooltip.style('display', 'block');
       tooltip.style('opacity',2);
