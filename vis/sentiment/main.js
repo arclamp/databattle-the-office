@@ -1,13 +1,16 @@
 (async () => {
-  fetch('sentiment.json').then(req => {
-    req.json().then(data => {
-      console.log(data);
-      render_chart("#chart1", "Michael Scott", data, "Michael", false, false);
-      render_chart("#chart2", "Stanley Hudson", data, "Stanley", false, false);
-      render_chart("#chart3", "Dwight Schrute", data, "Dwight", false, false);
-      render_chart("#chart4", "Jim Halpert", data, "Jim", false, false);
-    })
-  });
+  const req = await fetch('sentiment.json');
+  const data = await req.json();
+
+  render_chart("#michael", "Michael Scott", data, "Michael", false, false, true);
+  render_chart("#stanley", "Stanley Hudson", data, "Stanley", false, false, false);
+  render_chart("#dwight", "Dwight Schrute", data, "Dwight", false, false, false);
+  // render_chart("#jim", "Jim Halpert", data, "Jim", false, false);
+  render_chart("#pam", "Pam Beesley", data, "Pam", false, false, true);
+  // render_chart("#andy", "Andy Bernard", data, "Andy", false, false);
+  render_chart("#angela", "Angela Martin", data, "Angela", false, false, false);
+  render_chart("#toby", "Toby Flenderson", data, "Toby", false, false, false);
+  // render_chart("#packer", "Todd Packer", data, "Todd Packer", false,
 })();
 
 function smooth (data) {
@@ -23,7 +26,7 @@ function smooth (data) {
   });
 }
 
-function render_chart (sel, title, data, field, strokes, sorted) {
+function render_chart (sel, title, data, field, strokes, sorted, yLabel) {
   const stack = d3.layout.stack();
   let dataset = {
     categories: [...Array(9).keys()].map(x => `S${x + 1}`),
@@ -48,7 +51,6 @@ function render_chart (sel, title, data, field, strokes, sorted) {
   dataset.layers[0].forEach(season => {
     season.data = smooth(season.data);
   });
-  console.log(dataset);
 
   const n = dataset["series"].length; // Number of Layers
   const m = dataset["layers"].length; // Number of Samples in 1 layer
@@ -56,7 +58,7 @@ function render_chart (sel, title, data, field, strokes, sorted) {
   const yGroupMax = d3.max(dataset["layers"], function(layer) { return d3.max(layer, function(d) { return d.y0; }); });
   const yGroupMin = d3.min(dataset["layers"], function(layer) { return d3.min(layer, function(d) { return d.y; }); });
 
-  var margin = {top: 25, right: 25, bottom: 25, left: 25},
+  var margin = {top: 50, right: 25, bottom: 25, left: 25},
     width = 700 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
@@ -168,7 +170,7 @@ function render_chart (sel, title, data, field, strokes, sorted) {
       if (strokes) {
         val = x(d.season) + x.rangeBand() / n;
       } else {
-        val = +d3.select(this).attr('x1') + d.positivity * 0.5 * x.rangeBand() / n;
+        val = +d3.select(this).attr('x1') + 1.5 * d.positivity * 0.5 * x.rangeBand() / n;
       }
       return val;
     })
@@ -192,7 +194,14 @@ function render_chart (sel, title, data, field, strokes, sorted) {
     .attr("y", 0)
     .attr("dx", ".71em")
     .attr("dy", "-.71em")
+    .style('font-size', '18pt')
     .text(title);
+
+  if (yLabel) {
+    svg.append('text')
+      .attr('transform', `translate(-12,${height / 2})rotate(-90)`)
+      .text('Time');
+  }
 
   var tooltip = d3.select("body")
     .append('div')
@@ -208,8 +217,7 @@ function render_chart (sel, title, data, field, strokes, sorted) {
       if(!d.season)return null;
 
       // tooltip.select('.month').html("<b>" + d.season + "</b>");
-      tooltip.select('.month').html(`<b>${d.season} ${d.pos} ${d.neg}</b>`);
-      tooltip.select('.tempRange').text(d.line_text);
+      tooltip.select('.month').html(`<b>Season ${d.season}, Episode ${d.episode}</b><br><i>${d.line_text}</i><br>Positivity: ${d.positivity.toFixed(2)}`);
 
       tooltip.style('display', 'block');
       tooltip.style('opacity',2);
